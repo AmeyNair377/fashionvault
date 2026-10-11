@@ -19,5 +19,6 @@ const STORES = [
   { id: "store-one-who-rules",  name: "ONE WHO RULES",        url: "https://owr.life",           alphabetGroup: "O" },
   { id: "store-theblac",        name: "theblac",              url: "https://theblac.in",         alphabetGroup: "T" },
   { id: "store-zenin",          name: "ZENIN",                url: "https://zenin.co.in",        alphabetGroup: "Z" },
-  { id: "store-thelazybun",     name: "thelazybun",               url: "https://thelazybun.com",     alphabetGroup: "T" }, 
+  { id: "store-thelazybun",     name: "thelazybun",           url: "https://thelazybun.com",     alphabetGroup: "T" },
+  { id: "store-daastaan",       name: "DAASTAAN",             url: "https://www.daastaan.co/", alphabetGroup: "D" }, 
 ];
