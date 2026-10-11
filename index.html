@@ -4,6 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f1ede3">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; base-uri 'none'; form-action 'self'; object-src 'none'">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>FashionVault — Find your side street</title>
   <meta name="description" content="A field guide to independent online shops for clothes, shoes, and accessories.">
   <meta name="robots" content="index, follow, max-image-preview:large">
@@ -526,10 +528,10 @@
         <div class="footer-col">
           <h4>Connect</h4>
           <ul>
-            <li><a href="https://www.linkedin.com/in/amey-nair-130328428/" target="_blank" rel="noopener">LinkedIn ↗</a></li>
-            <li><a href="https://instagram.com/yourstruly.amey" target="_blank" rel="noopener">Instagram ↗</a></li>
+            <li><a href="https://www.linkedin.com/in/amey-nair-130328428/" target="_blank" rel="noopener noreferrer">LinkedIn ↗</a></li>
+            <li><a href="https://instagram.com/yourstruly.amey" target="_blank" rel="noopener noreferrer">Instagram ↗</a></li>
             <li><a href="mailto:ameynair737@gmail.com?subject=FashionVault%20enquiry">ameynair737@gmail.com</a></li>
-            <li><a href="https://wa.me/919136041633" target="_blank" rel="noopener">91360 41633 · WhatsApp ↗</a></li>
+            <li><a href="https://wa.me/919136041633" target="_blank" rel="noopener noreferrer">91360 41633 · WhatsApp ↗</a></li>
           </ul>
         </div>
         <div class="footer-col">
@@ -576,9 +578,9 @@
         <button type="button" role="tab" id="tabSignUp" aria-selected="true">Sign up</button>
       </div>
       <form class="auth-form" id="authForm">
-        <div class="field" id="nameField"><label for="authName">Name</label><input id="authName" type="text" autocomplete="name"></div>
+        <div class="field" id="nameField"><label for="authName">Name</label><input id="authName" type="text" maxlength="80" autocomplete="name"></div>
         <div class="field"><label for="authEmail">Email</label><input id="authEmail" type="email" required autocomplete="email"></div>
-        <div class="field"><label for="authPassword">Password</label><input id="authPassword" type="password" required minlength="6" autocomplete="new-password"></div>
+        <div class="field"><label for="authPassword">Password</label><input id="authPassword" type="password" required minlength="10" maxlength="72" autocomplete="new-password"></div>
         <div class="field" id="confirmField"><label for="authConfirm">Confirm password</label><input id="authConfirm" type="password" autocomplete="new-password"></div>
         <p class="auth-msg" id="authMsg" role="alert"></p>
         <button class="btn-primary" id="authSubmit" type="submit">Create account</button>
@@ -687,6 +689,14 @@
 
     function escapeHTML(value) {
       return String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+    }
+
+    /* Only allow http(s) links, so a bad entry can never become a javascript: link */
+    function safeUrl(value) {
+      try {
+        const u = new URL(String(value), location.href);
+        return (u.protocol === "https:" || u.protocol === "http:") ? u.href : "#";
+      } catch { return "#"; }
     }
 
     function showToast(message) {
@@ -869,7 +879,7 @@
           <h3 class="store-name">${escapeHTML(store.name)}</h3>
           <div class="card-bottom">
             <small>Independent shop</small>
-            <a class="visit-link" href="${escapeHTML(store.url)}" target="_blank" rel="noopener">Visit shop ↗</a>
+            <a class="visit-link" href="${escapeHTML(safeUrl(store.url))}" target="_blank" rel="noopener noreferrer">Visit shop ↗</a>
           </div>
         </article>
       `;
@@ -999,7 +1009,7 @@
       authMsg.textContent = "";
       authMsg.classList.remove("is-ok");
       const NOTES = {
-        preview: "Preview mode: accounts are simulated on this device only, and passwords are not stored or checked. Run setup.html to connect real accounts.",
+        preview: "Preview mode: accounts are simulated on this device only, and passwords are not stored or checked. Add your Supabase keys to config.js to connect real accounts.",
         unconfigured: "Accounts are not switched on for this site yet. You can keep browsing every shop.",
         unavailable: "Accounts are offline right now. Browsing still works. Please try again later."
       };
@@ -1045,7 +1055,7 @@
       authMsg.textContent = "";
 
       if (authMode === "signup") {
-        if (password.length < 6) { authMsg.textContent = "Please use a password with at least 6 characters."; authPassword.focus(); return; }
+        if (password.length < 10) { authMsg.textContent = "Please use a password with at least 10 characters."; authPassword.focus(); return; }
         if (password !== authConfirm.value) { authMsg.textContent = "Those passwords do not match. Please check them and try again."; authConfirm.focus(); return; }
       }
 
