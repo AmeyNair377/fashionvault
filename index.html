@@ -391,7 +391,11 @@
       .ticker-dup, .ticker-tail { display: none; }
       .ticker-group { flex-wrap: wrap; justify-content: center; row-gap: 6px; padding: 0 16px; white-space: normal; }
     }
-
+    
+    /* Touch devices: no pointer-driven tilt on the 3D ring */
+    @media (hover: none), (pointer: coarse) {
+      .carousel-scene { transform: none !important; transition: none; }
+    }
   </style>
 </head>
 <body>
@@ -1151,16 +1155,32 @@
       }
     });
 
-    // Interactive Parallax Mouse Movement for 3D Ring
+    // Interactive Parallax Mouse Movement for 3D Ring (mouse devices only, never touch)
     const heroWrapper = document.getElementById("hero3dWrapper");
     const carouselScene = document.getElementById("carouselScene");
     if (heroWrapper && carouselScene) {
-      window.addEventListener("mousemove", e => {
+      const mouseDevice = window.matchMedia("(hover: hover) and (pointer: fine)");
+
+      const onPointerMove = e => {
+        if (e.pointerType && e.pointerType !== "mouse") return; // ignore touch and pen
         const rect = heroWrapper.getBoundingClientRect();
         const x = (e.clientX - rect.left) / rect.width - 0.5;
         const y = (e.clientY - rect.top) / rect.height - 0.5;
         carouselScene.style.transform = `rotateY(${x * 24}deg) rotateX(${-y * 24}deg)`;
-      });
+      };
+
+      const syncParallax = () => {
+        if (mouseDevice.matches) {
+          window.addEventListener("pointermove", onPointerMove);
+        } else {
+          window.removeEventListener("pointermove", onPointerMove);
+          carouselScene.style.transform = ""; // reset to the default position
+        }
+      };
+
+      syncParallax();
+      if (mouseDevice.addEventListener) mouseDevice.addEventListener("change", syncParallax);
+      else if (mouseDevice.addListener) mouseDevice.addListener(syncParallax); // older Safari
     }
 
     /* ============================================================
