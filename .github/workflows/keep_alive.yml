@@ -10,7 +10,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Send keep-alive request to Supabase
-    run: |
-          curl -s "${{ secrets.SUPABASE_URL }}/rest/v1/stores?select=id&limit=1" \
-            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
-            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}"
+        run: curl -s "${{ secrets.SUPABASE_URL }}/rest/v1/stores?select=id&limit=1" -H "apikey:${{ secrets.SUPABASE_ANON_KEY }}" -H "Authorization:Bearer ${{ secrets.SUPABASE_ANON_KEY }}"
