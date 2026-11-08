@@ -634,7 +634,7 @@
   <button id="backTop" class="back-top" style="display:none;" aria-hidden="true"></button>
 
   <script src="config.js"></script>
-  <script src="stores.js"></script>
+  
   <script>
     /* ============================================================
        FashionVault — main script
@@ -642,7 +642,8 @@
          • preview  (no keys, opened locally): simulated on this device only
          • supabase (keys in config.js):    real accounts and synced favorites
        ============================================================ */
-    const STORE_LIST = (typeof STORES !== "undefined" && Array.isArray(STORES)) ? STORES : [];
+    let STORE_LIST = [];
+    let storesState = "loading"; // "loading" | "ok" | "error" | "nokeys"
     const CFG = window.FASHIONVAULT_CONFIG || {};
     const USE_SUPABASE = Boolean(CFG.supabaseUrl && CFG.supabaseAnonKey);
     const SUPABASE_SRC = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js";
@@ -692,6 +693,24 @@
     };
 
     function escapeHTML(value) {
+    async function loadStores() {
+      if (!CFG.supabaseUrl || !CFG.supabaseAnonKey) { storesState = "nokeys"; return; }
+        try {
+          const res = await fetch(
+            CFG.supabaseUrl.replace(/\/$/, "") + "/rest/v1/stores?select=id,slug,name,url,category&is_approved=eq.true",
+            { headers: { apikey: CFG.supabaseAnonKey, Authorization: "Bearer " + CFG.supabaseAnonKey } }
+          );
+      if (!res.ok) throw new Error("HTTP " + res.status);
+        const rows = await res.json();
+          STORE_LIST = rows
+          .map(r => ({ id: r.slug || r.id, name: r.name, url: r.url, alphabetGroup: r.category }))
+          .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));
+          storesState = "ok";
+        } catch (err) {
+          console.error(err);
+          storesState = "error";
+        }
+      }
       return String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
     }
 
@@ -893,10 +912,13 @@
       const visible = filteredStores();
       buildFilters();
 
-      if (!STORE_LIST.length) {
-        resultRoot.innerHTML = `<div class="empty-note">Could not load the store list. Make sure <strong>stores.js</strong> sits in the same folder as index.html.</div>`;
-        return;
-      }
+    if (!STORE_LIST.length) {
+      const msg = storesState === "loading" ? "Loading the directory…"
+        : storesState === "ok" ? "No shops listed yet."
+        : "Could not load the store list. Please refresh in a moment.";
+      resultRoot.innerHTML = `<div class="empty-note">${msg}</div>`;
+      return;
+    }
 
       if (activeFilter === "FAV" && !user) {
         resultRoot.innerHTML = `<div class="empty-note">Favorites live in your account so they follow you across devices.
@@ -1274,8 +1296,11 @@
     /* ============================================================
        START
        ============================================================ */
-    document.getElementById("heroCount").textContent = String(STORE_LIST.length).padStart(2, "0");
-    render(); // show the directory immediately as a guest
+      render(); // shows "Loading the directory…" first
+      loadStores().then(() => {
+        document.getElementById("heroCount").textContent = String(STORE_LIST.length).padStart(2, "0");
+        render();
+      });
 
     (async function startAccounts() {
       if (USE_SUPABASE) {
