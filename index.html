@@ -638,13 +638,13 @@
   <script>
     /* ============================================================
        FashionVault — main script
-       Stores come from stores.js. Accounts run in one of two modes:
+       Stores come from the Supabase stores table (managed in admin.html). Accounts run in one of two modes:
          • preview  (no keys, opened locally): simulated on this device only
          • supabase (keys in config.js):    real accounts and synced favorites
        ============================================================ */
     let STORE_LIST = [];
     let storesState = "loading"; // "loading" | "ok" | "error" | "nokeys"
-    const CFG = window.FASHIONVAULT_CONFIG || {};
+    const CFG = window.FV_CONFIG || window.FASHIONVAULT_CONFIG || {};
     const USE_SUPABASE = Boolean(CFG.supabaseUrl && CFG.supabaseAnonKey);
     const SUPABASE_SRC = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js";
     const SUPABASE_SRI = "sha384-iLddHTLokph6Omwoyid4XKxHaWa6w41BnoEj0q5oOrzmYPpHIKt1wyjReA7s//pP";
@@ -693,25 +693,27 @@
     };
 
     function escapeHTML(value) {
+      return String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+    }
+
+    /* Loads the live store list from Supabase (managed through admin.html) */
     async function loadStores() {
       if (!CFG.supabaseUrl || !CFG.supabaseAnonKey) { storesState = "nokeys"; return; }
-        try {
-          const res = await fetch(
-            CFG.supabaseUrl.replace(/\/$/, "") + "/rest/v1/stores?select=id,slug,name,url,category&is_approved=eq.true",
-            { headers: { apikey: CFG.supabaseAnonKey, Authorization: "Bearer " + CFG.supabaseAnonKey } }
-          );
-      if (!res.ok) throw new Error("HTTP " + res.status);
+      try {
+        const res = await fetch(
+          CFG.supabaseUrl.replace(/\/$/, "") + "/rest/v1/stores?select=id,slug,name,url,category&is_approved=eq.true",
+          { headers: { apikey: CFG.supabaseAnonKey, Authorization: "Bearer " + CFG.supabaseAnonKey } }
+        );
+        if (!res.ok) throw new Error("HTTP " + res.status);
         const rows = await res.json();
-          STORE_LIST = rows
+        STORE_LIST = rows
           .map(r => ({ id: r.slug || r.id, name: r.name, url: r.url, alphabetGroup: r.category }))
           .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));
-          storesState = "ok";
-        } catch (err) {
-          console.error(err);
-          storesState = "error";
-        }
+        storesState = "ok";
+      } catch (err) {
+        console.error("Could not load stores:", err);
+        storesState = "error";
       }
-      return String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
     }
 
     /* Only allow http(s) links, so a bad entry can never become a javascript: link */
